@@ -42,7 +42,8 @@ public enum TokenType {
     ARROW,
     COMMA,
     COLON,
-    SEMICOLON,;
+    SEMICOLON,
+    EOF;
 
     @Override
     public String toString() {
@@ -123,6 +124,8 @@ public enum TokenType {
                 return "COLON";
             case SEMICOLON:
                 return "SEMICOLON";
+            case EOF:
+                return "EOF";
             default:
                 return "InvalidToken";
         }
