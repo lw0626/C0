@@ -34,6 +34,7 @@ public final class Analyser {
     }
 
     public List<Instruction> analyse() throws CompileError {
+        analyseProgram();
         return instructions;
     }
 
@@ -307,12 +308,101 @@ public final class Analyser {
             }
         }
         else if(check(TokenType.WHILE_KW)){
+            next();
             analyseExpr();
             analyseBlockStmt();
         }
         else if(check(TokenType.BREAK_KW)){
             next();
             expect(TokenType.SEMICOLON);
+        }
+        else if(check(TokenType.CONTINUE_KW)){
+            next();
+            expect(TokenType.SEMICOLON);
+        }
+        else if(check(TokenType.RETURN_KW)){
+            next();
+            if(check(TokenType.SEMICOLON)){
+                next();
+            }
+            else {
+                analyseExpr();
+                expect(TokenType.SEMICOLON);
+            }
+        }
+        else if(check(TokenType.L_BRACE)){
+            analyseBlockStmt();
+        }
+        else if(check(TokenType.LET_KW)||check(TokenType.CONST_KW)){
+//            if(check(TokenType.LET_KW)){
+//                next();
+//                expect(TokenType.IDENT);
+//                expect(TokenType.COLON);
+//                expect(TokenType.IDENT);
+//                if(check(TokenType.SEMICOLON)){
+//                    next();
+//                }
+//                else{
+//                    expect(TokenType.ASSIGN);
+//                    analyseExpr();
+//                    expect(TokenType.SEMICOLON);
+//                }
+//            }
+//            else {
+//                expect(TokenType.CONST_KW);
+//                expect(TokenType.IDENT);
+//                expect(TokenType.COLON);
+//                expect(TokenType.IDENT);
+//                if(check(TokenType.SEMICOLON)){
+//                    next();
+//                }
+//                else{
+//                    expect(TokenType.ASSIGN);
+//                    analyseExpr();
+//                    expect(TokenType.SEMICOLON);
+//                }
+//            }
+            analyseDeclStmt();
+        }
+        else {
+            expect(TokenType.SEMICOLON);
+        }
+    }
+
+    private void analyseDeclStmt() throws CompileError {
+        if(check(TokenType.LET_KW)||check(TokenType.CONST_KW)){
+            if(check(TokenType.LET_KW)){
+                next();
+                expect(TokenType.IDENT);
+                expect(TokenType.COLON);
+                expect(TokenType.IDENT);
+                if(check(TokenType.SEMICOLON)){
+                    next();
+                }
+                else{
+                    expect(TokenType.ASSIGN);
+                    analyseExpr();
+                    expect(TokenType.SEMICOLON);
+                }
+            }
+            else {
+                expect(TokenType.CONST_KW);
+                expect(TokenType.IDENT);
+                expect(TokenType.COLON);
+                expect(TokenType.IDENT);
+                if(check(TokenType.SEMICOLON)){
+                    next();
+                }
+                else{
+                    expect(TokenType.ASSIGN);
+                    analyseExpr();
+                    expect(TokenType.SEMICOLON);
+                }
+            }
+        }
+        else {
+            var token = peek();
+            throw new ExpectedTokenError(TokenType.LET_KW, token);
         }
     }
 
@@ -324,4 +414,59 @@ public final class Analyser {
         expect(TokenType.R_BRACE);
     }
 
+    private void analyseFunctionParam() throws CompileError {
+        if(check(TokenType.IDENT)){
+            next();
+            expect(TokenType.COLON);
+            expect(TokenType.IDENT);
+        }
+        else {
+            expect(TokenType.CONST_KW);
+            expect(TokenType.IDENT);
+            expect(TokenType.COLON);
+            expect(TokenType.IDENT);
+        }
+    }
+
+    private void analyseFunctionParamList() throws CompileError {
+        analyseFunctionParam();
+        while (check(TokenType.COMMA)){
+            next();
+            analyseFunctionParam();
+        }
+    }
+
+    private void analyseFunction() throws CompileError {
+        expect(TokenType.FN_KW);
+        expect(TokenType.IDENT);
+        expect(TokenType.L_PAREN);
+        if(check(TokenType.R_PAREN)){
+            next();
+            expect(TokenType.ARROW);
+            expect(TokenType.IDENT);
+            analyseBlockStmt();
+        }
+        else {
+            analyseFunctionParamList();
+            expect(TokenType.R_PAREN);
+            expect(TokenType.ARROW);
+            expect(TokenType.IDENT);
+            analyseBlockStmt();
+        }
+    }
+
+    private void analyseItem() throws CompileError {
+        if(check(TokenType.FN_KW)){
+            analyseFunction();
+        }
+        else {
+            analyseDeclStmt();
+        }
+    }
+
+    private void analyseProgram() throws CompileError {
+        while (check(TokenType.FN_KW) || check(TokenType.LET_KW) || check(TokenType.CONST_KW)) {
+            analyseItem();
+        }
+    }
 }
